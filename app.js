@@ -153,7 +153,10 @@ function returnToLobby(){
   if(!net.host){net.send({type:'lobby-request'});return;}
   match=null;net.locked=false;delete net.cache.snapshot;lobby.stage='lobby';lobby.ready[1]=false;showSelect();publishLobby();renderSelected();renderRoster();
 }
-$('exit-battle').addEventListener('click',()=>{if(match?.phase!=='finished'&&!window.confirm(net?'Leaving disconnects this match. Exit the fight?':'Exit this fight? Unfinished matches earn no rewards.'))return;leaveRoom();});
+function requestExit(){if(match&&match.phase!=='finished'){$('exit-detail').textContent=net?'Leaving disconnects this match. If you are hosting, the room closes for both players. Unfinished matches earn no rewards.':'Unfinished matches earn no rewards. Your completed-match rewards are already saved.';$('exit-dialog').showModal();}else leaveRoom();}
+$('exit-battle').addEventListener('click',requestExit);
+$('confirm-exit').addEventListener('click',()=>{$('exit-dialog').close();leaveRoom();});
+document.querySelector('.brand').addEventListener('click',e=>{if(match||net){e.preventDefault();requestExit();}});
 $('choose-again').addEventListener('click',returnToLobby);
 $('rematch').addEventListener('click',()=>{if(net){if(net.host&&net.connected){lobby.ready[1]=true;beginOnline();}}else{const old=match;showBattle(createMatch(old.fighters[0].id,old.fighters[1].id,{mode:'bot',difficulty:old.difficulty,seed:crypto.getRandomValues(new Uint32Array(1))[0],matchId:crypto.randomUUID()}));}});
 function addChat(index,raw){
@@ -235,4 +238,3 @@ function frame(now){
 requestAnimationFrame(frame);
 setInterval(()=>{if(net&&!net.host&&net.connected&&match)net.send({type:'input',input:inputs[1]});},80);
 document.addEventListener('visibilitychange',()=>{clearInputs();lastFrame=performance.now();accumulator=0;});
-window.addEventListener('beforeunload',e=>{if(net?.connected&&match&&match.phase!=='finished'){e.preventDefault();e.returnValue='';}});
